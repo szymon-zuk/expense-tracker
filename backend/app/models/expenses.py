@@ -1,14 +1,16 @@
 from datetime import datetime, timezone
 
-from sqlalchemy import (Boolean, Column, DateTime, Float, ForeignKey, Integer,
-                        String)
+from sqlalchemy import (Boolean, Column, DateTime, Enum, Float, ForeignKey,
+                        Integer, String)
 from sqlalchemy.orm import relationship
 
 from backend.app.db.database import Base
+from backend.app.models.currency import CurrencyEnum
 
 
 class User(Base):
     __tablename__ = "users"
+
     id = Column(Integer, primary_key=True, autoincrement=True)
     email = Column(String, unique=True, index=True)
     username = Column(String, unique=True, index=True)
@@ -19,6 +21,7 @@ class User(Base):
 
 class Category(Base):
     __tablename__ = "categories"
+
     id = Column(Integer, primary_key=True, autoincrement=True)
     name = Column(String, unique=True, index=True)
     description = Column(String)
@@ -31,7 +34,7 @@ class Expense(Base):
     id = Column(Integer, primary_key=True, index=True)
     name = Column(String, index=True)
     description = Column(String)
-    currency = Column(String)  # TODO: implement Enum for supported currencies
+    currency = Column(Enum(CurrencyEnum, name="currency_enum"), nullable=False)
     amount = Column(Float)
     date = Column(DateTime, default=datetime.now(timezone.utc))
     owner_id = Column(Integer, ForeignKey("users.id"))
