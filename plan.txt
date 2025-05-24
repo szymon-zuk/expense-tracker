@@ -1,11 +1,11 @@
 Plan for the application:
 
-- models - expense, user, category
+- models - expense, user, category - DONE
 - expense creation, reports for a given month, update/delete of expenses, assigning categories to expenses (optional)
 - endpoints: create expense, edit/delete expense, get expenses by date range, sum expenses/statistics
 - auth methods - probably JWT, maybe with OAuth
-- alembic setup for migrations
-- .env to store env variables
+- alembic setup for migrations - DONE
+- .env to store env variables - DONE
 
 Extension:
 - expense recognition from a check
