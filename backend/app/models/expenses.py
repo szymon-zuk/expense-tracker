@@ -1,11 +1,19 @@
 from datetime import datetime, timezone
 
-from sqlalchemy import (Boolean, Column, DateTime, Enum, Float, ForeignKey,
-                        Integer, String)
+from sqlalchemy import (
+    Boolean,
+    Column,
+    DateTime,
+    Enum,
+    Float,
+    ForeignKey,
+    Integer,
+    String,
+)
 from sqlalchemy.orm import relationship
 
 from backend.app.db.database import Base
-from backend.app.models.currency import CurrencyEnum
+from backend.app.schemas.expenses import CurrencyEnum
 
 
 class User(Base):
