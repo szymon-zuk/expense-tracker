@@ -1,15 +1,7 @@
 from datetime import datetime, timezone
 
-from sqlalchemy import (
-    Boolean,
-    Column,
-    DateTime,
-    Enum,
-    Float,
-    ForeignKey,
-    Integer,
-    String,
-)
+from sqlalchemy import (Boolean, Column, DateTime, Enum, Float, ForeignKey,
+                        Integer, String)
 from sqlalchemy.orm import relationship
 
 from backend.app.db.database import Base
@@ -24,7 +16,7 @@ class User(Base):
     username = Column(String, unique=True, index=True)
     hashed_password = Column(String(length=256))
     is_active = Column(Boolean, default=True)
-    expenses = relationship("Expenses", back_populates="owner")
+    expenses = relationship("Expense", back_populates="owner")
 
 
 class Category(Base):
@@ -33,7 +25,7 @@ class Category(Base):
     id = Column(Integer, primary_key=True, autoincrement=True)
     name = Column(String, unique=True, index=True)
     description = Column(String)
-    expenses = relationship("Expenses", back_populates="category")
+    expenses = relationship("Expense", back_populates="category")
 
 
 class Expense(Base):
@@ -47,5 +39,5 @@ class Expense(Base):
     date = Column(DateTime, default=datetime.now(timezone.utc))
     owner_id = Column(Integer, ForeignKey("users.id"))
     category_id = Column(Integer, ForeignKey("categories.id"))
-    owner = relationship("Users", back_populates="expenses")
-    category = relationship("Categories", back_populates="expenses")
+    owner = relationship("User", back_populates="expenses")
+    category = relationship("Category", back_populates="expenses")
