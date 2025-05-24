@@ -1,0 +1,14 @@
+Plan for the application:
+
+- models - expense, user, category
+- expense creation, reports for a given month, update/delete of expenses, assigning categories to expenses (optional)
+- endpoints: create expense, edit/delete expense, get expenses by date range, sum expenses/statistics
+- auth methods - probably JWT, maybe with OAuth
+- alembic setup for migrations
+- .env to store env variables
+
+Extension:
+- expense recognition from a check
+- frontend in React
+- data export to CSV for statistic usage
+- support for other currencies than PLN
