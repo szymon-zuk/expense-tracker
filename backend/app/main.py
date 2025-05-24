@@ -1,4 +1,4 @@
-from db.database import SessionLocal
+from backend.app.db.database import SessionLocal
 from fastapi import FastAPI
 
 app = FastAPI()
