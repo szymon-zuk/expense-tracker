@@ -1,20 +1,28 @@
 from datetime import datetime, timezone
 from typing import Annotated
 
-from fastapi import (APIRouter, Depends, HTTPException, Request, Response,
-                     status)
+from fastapi import APIRouter, Depends, HTTPException, Request, Response, status
 from fastapi.responses import RedirectResponse
 from sqlalchemy.orm import Session
 
 from backend.app.auth.dependencies import CurrentUser
-from backend.app.auth.jwt import (create_token_pair, hash_password,
-                                  verify_password, verify_token)
+from backend.app.auth.jwt import (
+    create_token_pair,
+    hash_password,
+    verify_password,
+    verify_token,
+)
 from backend.app.auth.oauth import get_google_auth_url, get_google_user_info
 from backend.app.config.logging import get_logger
 from backend.app.db.database import get_db
 from backend.app.models.expenses import User
-from backend.app.schemas.auth import (LoginRequest, RefreshTokenRequest, Token,
-                                      UserCreate, UserResponse)
+from backend.app.schemas.auth import (
+    LoginRequest,
+    RefreshTokenRequest,
+    Token,
+    UserCreate,
+    UserResponse,
+)
 
 router = APIRouter(prefix="/auth", tags=["authentication"])
 logger = get_logger("auth.router")
@@ -128,16 +136,12 @@ def login(login_data: LoginRequest, db: Annotated[Session, Depends(get_db)]):
 
     # Create token pair
     token_data = create_token_pair(user.id, user.email)
-
-    # Add usage instructions to the response
     response_data = Token(**token_data)
 
     logger.info(f"✅ User logged in successfully: {login_data.email}")
     return {
         **response_data.model_dump(),
-        "usage_example": "Authorization: Bearer "
-        + token_data["access_token"][:50]
-        + "...",
+        "usage_example": f"Authorization: Bearer {token_data['access_token'][:50]}...",
         "instructions": "Use this token in Authorization header as: Bearer <access_token>",
     }
 
@@ -174,16 +178,12 @@ def refresh_token(
 
     # Create new token pair
     new_token_data = create_token_pair(user.id, user.email)
-
-    # Add usage instructions to the response
     response_data = Token(**new_token_data)
 
     logger.info(f"✅ Token refreshed successfully for user: {user.email}")
     return {
         **response_data.model_dump(),
-        "usage_example": "Authorization: Bearer "
-        + new_token_data["access_token"][:50]
-        + "...",
+        "usage_example": f"Authorization: Bearer {new_token_data['access_token'][:50]}...",
         "instructions": "Use this token in Authorization header as: Bearer <access_token>",
         "message": "Token refreshed successfully!",
     }
@@ -298,17 +298,13 @@ async def google_callback(
 
     # Create token pair
     token_data = create_token_pair(user.id, user.email)
-
-    # Add usage instructions to the response
     response_data = Token(**token_data)
     logger.info(
         f"✅ Google OAuth callback processed successfully for user: {user.email}"
     )
     return {
         **response_data.model_dump(),
-        "usage_example": "Authorization: Bearer "
-        + token_data["access_token"][:50]
-        + "...",
+        "usage_example": f"Authorization: Bearer {token_data['access_token'][:50]}...",
         "instructions": "Use this token in Authorization header as: Bearer <access_token>",
         "provider": "google",
         "message": "Successfully authenticated with Google!",

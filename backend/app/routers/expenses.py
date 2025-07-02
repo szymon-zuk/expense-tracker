@@ -8,9 +8,14 @@ from sqlalchemy.orm import Session
 from backend.app.auth.dependencies import CurrentActiveUser
 from backend.app.db.database import get_db
 from backend.app.models.expenses import Category, Expense, User
-from backend.app.schemas.expenses import (CategoryStats, CurrencyStats,
-                                          ExpenseCreate, ExpenseResponse,
-                                          ExpenseStatistics, ExpenseUpdate)
+from backend.app.schemas.expenses import (
+    CategoryStats,
+    CurrencyStats,
+    ExpenseCreate,
+    ExpenseResponse,
+    ExpenseStatistics,
+    ExpenseUpdate,
+)
 
 router = APIRouter()
 
@@ -30,13 +35,10 @@ def get_all_expenses(
     """Get all expenses for the current user with optional filtering and pagination"""
     query = select(Expense).where(Expense.owner_id == current_user.id)
 
-    # Apply category filter
     if category_id is not None:
         query = query.where(Expense.category_id == category_id)
 
-    # Apply pagination
     query = query.offset(skip).limit(limit)
-
     result = db.execute(query)
     return result.scalars().all()
 
@@ -58,13 +60,6 @@ def get_expense_statistics(
 ):
     """Get expense statistics for the current user in a specified time frame"""
 
-    # Build base query for statistics
-    stats_query = select(
-        func.sum(Expense.amount).label("total_amount"),
-        func.count(Expense.id).label("total_expenses"),
-        func.avg(Expense.amount).label("average_expense"),
-    )
-
     # Build filter conditions - always filter by current user
     conditions = [Expense.owner_id == current_user.id]
     if start_date:
@@ -74,10 +69,15 @@ def get_expense_statistics(
     if category_id is not None:
         conditions.append(Expense.category_id == category_id)
 
-    # Apply conditions to stats query
-    if conditions:
-        for condition in conditions:
-            stats_query = stats_query.where(condition)
+    # Build base query for statistics
+    stats_query = select(
+        func.sum(Expense.amount).label("total_amount"),
+        func.count(Expense.id).label("total_expenses"),
+        func.avg(Expense.amount).label("average_expense"),
+    )
+
+    for condition in conditions:
+        stats_query = stats_query.where(condition)
 
     # Get basic statistics
     total_stats = db.execute(stats_query).first()
@@ -90,10 +90,8 @@ def get_expense_statistics(
         func.avg(Expense.amount).label("average_amount"),
     ).group_by(Expense.currency)
 
-    # Apply same conditions to currency query
-    if conditions:
-        for condition in conditions:
-            currency_query = currency_query.where(condition)
+    for condition in conditions:
+        currency_query = currency_query.where(condition)
 
     currency_results = db.execute(currency_query).all()
 
@@ -110,14 +108,12 @@ def get_expense_statistics(
         .group_by(Expense.category_id, Category.name)
     )
 
-    # Apply same conditions to category query
-    if conditions:
-        for condition in conditions:
-            category_query = category_query.where(condition)
+    for condition in conditions:
+        category_query = category_query.where(condition)
 
     category_results = db.execute(category_query).all()
 
-    # Build response - handle None values
+    # Build response
     currency_breakdown = [
         CurrencyStats(
             currency=row.currency,
@@ -205,18 +201,32 @@ def create_expense(
     expense: ExpenseCreate, current_user: CurrentActiveUser, db: db_dependency
 ):
     """Create a new expense for the current user"""
-    db_expense = Expense(
+
+    # Check if category exists
+    if expense.category_id:
+        category = db.get(Category, expense.category_id)
+        if not category:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=f"Category with id {expense.category_id} not found",
+            )
+
+    # Create new expense
+    new_expense = Expense(
         name=expense.name,
         description=expense.description,
-        currency=expense.currency,
         amount=expense.amount,
+        currency=expense.currency,
         category_id=expense.category_id,
-        owner_id=current_user.id,  # Always use current user's ID
+        owner_id=current_user.id,
+        date=datetime.utcnow(),
     )
-    db.add(db_expense)
+
+    db.add(new_expense)
     db.commit()
-    db.refresh(db_expense)
-    return db_expense
+    db.refresh(new_expense)
+
+    return new_expense
 
 
 @router.put("/expenses/{expense_id}", response_model=ExpenseResponse)
@@ -227,6 +237,8 @@ def update_expense(
     db: db_dependency,
 ):
     """Update an existing expense (only user's own expenses)"""
+
+    # Get the expense
     expense = db.get(Expense, expense_id)
     if not expense:
         raise HTTPException(
@@ -234,28 +246,29 @@ def update_expense(
             detail=f"Expense with id {expense_id} not found",
         )
 
-    # Ensure user can only update their own expenses
+    # Check ownership
     if getattr(expense, "owner_id") != current_user.id:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="You can only update your own expenses",
         )
 
+    # Update expense
     update_data = expense_update.model_dump(exclude_unset=True)
-    # Don't allow updating owner_id
-    update_data.pop("owner_id", None)
-
     for field, value in update_data.items():
         setattr(expense, field, value)
 
     db.commit()
     db.refresh(expense)
+
     return expense
 
 
 @router.delete("/expenses/{expense_id}", status_code=status.HTTP_204_NO_CONTENT)
 def delete_expense(expense_id: int, current_user: CurrentActiveUser, db: db_dependency):
     """Delete an expense (only user's own expenses)"""
+
+    # Get the expense
     expense = db.get(Expense, expense_id)
     if not expense:
         raise HTTPException(
@@ -263,7 +276,7 @@ def delete_expense(expense_id: int, current_user: CurrentActiveUser, db: db_depe
             detail=f"Expense with id {expense_id} not found",
         )
 
-    # Ensure user can only delete their own expenses
+    # Check ownership
     if getattr(expense, "owner_id") != current_user.id:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
@@ -272,4 +285,3 @@ def delete_expense(expense_id: int, current_user: CurrentActiveUser, db: db_depe
 
     db.delete(expense)
     db.commit()
-    return None
