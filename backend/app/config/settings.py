@@ -9,11 +9,17 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 
 @dataclass
 class JWTConfig:
-    issuer: str
     secret_key: str
     algorithm: str
-    access_token_ttl: timedelta
-    refresh_token_ttl: timedelta
+    access_token_expire_minutes: int
+    refresh_token_expire_days: int
+
+
+@dataclass
+class OAuth2Config:
+    google_client_id: str
+    google_client_secret: str
+    google_redirect_uri: str
 
 
 class ModeEnum(StrEnum):
@@ -31,6 +37,7 @@ class Settings(BaseSettings):
     BASE_URL: str = "http://localhost:8000"
     API_VERSION_STR: str = "/api/v1"
 
+    # Database Configuration
     DATABASE_USERNAME: str = "postgres"
     DATABASE_PASSWORD: str = "postgres"
     DATABASE_HOST: str = "localhost"
@@ -39,6 +46,17 @@ class Settings(BaseSettings):
     DATABASE_URL: str = (
         "postgresql://postgres:postgres@localhost:5432/expense_tracker_db"
     )
+
+    # JWT Configuration
+    JWT_SECRET_KEY: str = "your-secret-key-change-this-in-production"
+    JWT_ALGORITHM: str = "HS256"
+    JWT_ACCESS_TOKEN_EXPIRE_MINUTES: int = 30
+    JWT_REFRESH_TOKEN_EXPIRE_DAYS: int = 7
+
+    # OAuth2 Configuration
+    GOOGLE_CLIENT_ID: str = ""
+    GOOGLE_CLIENT_SECRET: str = ""
+    GOOGLE_REDIRECT_URI: str = "http://localhost:8000/auth/google/callback"
 
     @property
     def postgres_url(self) -> PostgresDsn:
@@ -51,15 +69,22 @@ class Settings(BaseSettings):
             path=self.DATABASE_NAME,
         )
 
-    # @property
-    # def jwt_config(self) -> JWTConfig:
-    #     return JWTConfig(
-    #         issuer=self.JWT_ISSUER,
-    #         secret_key=self.JWT_SECRET_KEY,
-    #         algorithm=self.JWT_ALGORITHM,
-    #         access_token_ttl=timedelta(seconds=self.JWT_ACCESS_TOKEN_TTL_SECONDS),
-    #         refresh_token_ttl=timedelta(seconds=self.JWT_REFRESH_TOKEN_TTL_SECONDS),
-    #     )
+    @property
+    def jwt_config(self) -> JWTConfig:
+        return JWTConfig(
+            secret_key=self.JWT_SECRET_KEY,
+            algorithm=self.JWT_ALGORITHM,
+            access_token_expire_minutes=self.JWT_ACCESS_TOKEN_EXPIRE_MINUTES,
+            refresh_token_expire_days=self.JWT_REFRESH_TOKEN_EXPIRE_DAYS,
+        )
+
+    @property
+    def oauth2_config(self) -> OAuth2Config:
+        return OAuth2Config(
+            google_client_id=self.GOOGLE_CLIENT_ID,
+            google_client_secret=self.GOOGLE_CLIENT_SECRET,
+            google_redirect_uri=self.GOOGLE_REDIRECT_URI,
+        )
 
 
 @lru_cache

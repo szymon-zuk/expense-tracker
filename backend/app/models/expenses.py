@@ -12,10 +12,25 @@ class User(Base):
     __tablename__ = "users"
 
     id = Column(Integer, primary_key=True, autoincrement=True)
-    email = Column(String, unique=True, index=True)
+    email = Column(String, unique=True, index=True, nullable=False)
     username = Column(String, unique=True, index=True)
-    hashed_password = Column(String(length=256))
+    full_name = Column(String)
+    hashed_password = Column(
+        String(length=256), nullable=True
+    )  # Nullable for OAuth users
     is_active = Column(Boolean, default=True)
+    is_verified = Column(Boolean, default=False)
+
+    # OAuth fields
+    google_id = Column(String, unique=True, nullable=True)
+    provider = Column(String, default="local")  # "local", "google", etc.
+    avatar_url = Column(String, nullable=True)
+
+    # Timestamps
+    created_at = Column(DateTime, default=datetime.now(timezone.utc))
+    last_login = Column(DateTime, nullable=True)
+
+    # Relationships
     expenses = relationship("Expense", back_populates="owner")
 
 

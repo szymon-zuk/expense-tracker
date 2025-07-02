@@ -36,6 +36,7 @@ services:
     volumes:
       - ./backend:/app/backend
     restart: unless-stopped
+    command: ["/start-prod.sh"]
 
 volumes:
   postgres_data: 
