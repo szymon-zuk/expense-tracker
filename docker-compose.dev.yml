@@ -1,0 +1,53 @@
+version: '3.8'
+
+services:
+  db:
+    image: postgres:15
+    container_name: expense-tracker-db-dev
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: expense_tracker_db
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data_dev:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  app:
+    build: .
+    container_name: expense-tracker-app-dev
+    ports:
+      - "8000:8000"
+    environment:
+      DATABASE_USERNAME: postgres
+      DATABASE_PASSWORD: postgres
+      DATABASE_HOST: db
+      DATABASE_PORT: 5432
+      DATABASE_NAME: expense_tracker_db
+      DATABASE_URL: postgresql://postgres:postgres@db:5432/expense_tracker_db
+    depends_on:
+      db:
+        condition: service_healthy
+    volumes:
+      - ./backend:/app/backend
+      - ./pyproject.toml:/app/pyproject.toml
+      - ./uv.lock:/app/uv.lock
+      - ./alembic.ini:/app/alembic.ini
+    restart: unless-stopped
+    command: >
+      bash -c "
+        echo 'Waiting for database...' &&
+        while ! nc -z db 5432; do sleep 0.1; done &&
+        echo 'Running migrations...' &&
+        uv run alembic upgrade head &&
+        echo 'Starting development server with reload...' &&
+        uv run uvicorn backend.app.main:app --host 0.0.0.0 --port 8000 --reload
+      "
+
+volumes:
+  postgres_data_dev: 

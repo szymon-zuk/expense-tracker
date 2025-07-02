@@ -1,10 +1,8 @@
 from fastapi import FastAPI
 
-from backend.app.db.database import get_db
 from backend.app.routers import expenses
 
 app = FastAPI()
-db = get_db()
 
 
 @app.get("/")

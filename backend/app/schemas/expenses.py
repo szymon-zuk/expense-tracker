@@ -1,7 +1,7 @@
 from enum import StrEnum
 from typing import Optional
 
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict
 
 
 class CurrencyEnum(StrEnum):
@@ -30,6 +30,8 @@ class ExpenseUpdate(BaseModel):
 
 
 class ExpenseResponse(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
     id: int
     name: str
     description: Optional[str] = None
@@ -37,6 +39,3 @@ class ExpenseResponse(BaseModel):
     amount: Optional[float] = None
     category_id: Optional[int] = None
     owner_id: Optional[int] = None
-
-    class Config:
-        orm_mode = True

@@ -1,30 +1,28 @@
-from typing import AsyncGenerator
+from typing import Generator
 
 from fastapi import HTTPException
-from sqlalchemy.ext.asyncio import (AsyncSession, async_sessionmaker,
-                                    create_async_engine)
+from sqlalchemy import create_engine
+from sqlalchemy.orm import Session, sessionmaker
 
 from backend.app.config.settings import get_settings
 
 settings = get_settings()
 
-async_engine = create_async_engine(
-    str(settings.async_postgres_url), echo=settings.DEBUG
-)
+engine = create_engine(str(settings.postgres_url), echo=settings.DEBUG)
 
-AsyncSessionLocal = async_sessionmaker(async_engine, expire_on_commit=False)
+SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
 
-async def get_db() -> AsyncGenerator[AsyncSession, None]:
+def get_db() -> Generator[Session, None, None]:
     """Create and get database session.
 
     :yield: database session.
     """
-    async with AsyncSessionLocal() as session:
-        try:
-            yield session
-        except HTTPException:
-            await session.rollback()
-            raise
-        finally:
-            await session.close()
+    db = SessionLocal()
+    try:
+        yield db
+    except HTTPException:
+        db.rollback()
+        raise
+    finally:
+        db.close()
