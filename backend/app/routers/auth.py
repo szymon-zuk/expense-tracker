@@ -1,5 +1,5 @@
 from datetime import datetime, timezone
-from typing import Annotated
+from typing import Annotated, Optional
 
 from fastapi import (APIRouter, Depends, HTTPException, Request, Response,
                      status)
@@ -112,10 +112,10 @@ def login(login_data: LoginRequest, db: Annotated[Session, Depends(get_db)]):
             detail="Invalid email or password",
         )
 
-    # Verify password
-    if not user.hashed_password or not verify_password(
-        login_data.password, user.hashed_password
-    ):
+    # Verify password - SQLAlchemy models need proper attribute access
+    user_password = getattr(user, "hashed_password", None)
+    user_password = str(user_password) if user_password else None
+    if not user_password or not verify_password(login_data.password, user_password):
         logger.warning(f"❌ Login failed - invalid password: {login_data.email}")
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
@@ -123,11 +123,11 @@ def login(login_data: LoginRequest, db: Annotated[Session, Depends(get_db)]):
         )
 
     # Update last login
-    user.last_login = datetime.now(timezone.utc)
+    user.last_login = datetime.now(timezone.utc)  # type: ignore[assignment]
     db.commit()
 
     # Create token pair
-    token_data = create_token_pair(user.id, user.email)
+    token_data = create_token_pair(user.id, user.email)  # type: ignore[arg-type]
     response_data = Token(**token_data)
 
     logger.info(f"✅ User logged in successfully: {login_data.email}")
@@ -169,7 +169,7 @@ def refresh_token(
         )
 
     # Create new token pair
-    new_token_data = create_token_pair(user.id, user.email)
+    new_token_data = create_token_pair(user.id, user.email)  # type: ignore[arg-type]
     response_data = Token(**new_token_data)
 
     logger.info(f"✅ Token refreshed successfully for user: {user.email}")
@@ -218,8 +218,8 @@ async def google_login(request: Request):
 @router.get("/google/callback")
 async def google_callback(
     request: Request,
-    code: str = None,
-    state: str = None,
+    code: Optional[str] = None,
+    state: Optional[str] = None,
     db: Session = Depends(get_db),
 ):
     """Handle Google OAuth callback"""
@@ -243,8 +243,8 @@ async def google_callback(
     # Clear the state from session
     request.session.pop("oauth_state", None)
 
-    # Get user info from Google
-    google_user = await get_google_user_info(code, state)
+    # Get user info from Google - handle optional state parameter
+    google_user = await get_google_user_info(code, state or "")
     if not google_user:
         logger.warning(
             "❌ Google OAuth callback failed - failed to get user information from Google"
@@ -274,22 +274,23 @@ async def google_callback(
         logger.info(f"✅ New user created from Google OAuth: {google_user.email}")
     else:
         # Update existing user with Google info if needed
-        if not user.google_id:
-            user.google_id = google_user.id
-            user.provider = "google"
-            user.avatar_url = google_user.picture
-            user.is_verified = google_user.verified_email
+        user_google_id = getattr(user, "google_id", None)
+        if not user_google_id:
+            user.google_id = google_user.id  # type: ignore[assignment]
+            user.provider = "google"  # type: ignore[assignment]
+            user.avatar_url = google_user.picture  # type: ignore[assignment]
+            user.is_verified = google_user.verified_email  # type: ignore[assignment]
             db.commit()
             logger.info(
                 f"✅ Existing user linked with Google OAuth: {google_user.email}"
             )
 
     # Update last login
-    user.last_login = datetime.now(timezone.utc)
+    user.last_login = datetime.now(timezone.utc)  # type: ignore[assignment]
     db.commit()
 
     # Create token pair
-    token_data = create_token_pair(user.id, user.email)
+    token_data = create_token_pair(user.id, user.email)  # type: ignore[arg-type]
     response_data = Token(**token_data)
     logger.info(
         f"✅ Google OAuth callback processed successfully for user: {user.email}"

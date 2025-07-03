@@ -24,6 +24,8 @@ dependencies = [
     "pytest>=7.4.0",
     "pytest-asyncio>=0.21.0",
     "pytest-cov>=4.1.0",
+    "types-python-jose>=3.3.0",
+    "types-passlib>=1.7.7",
     "ruff>=0.9.4",
     "sqlalchemy>=2.0.37",
 ]
