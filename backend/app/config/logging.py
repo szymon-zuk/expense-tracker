@@ -30,7 +30,7 @@ def get_logging_config() -> Dict[str, Any]:
                 "style": "{",
             },
             "json": {
-                "()": "pythonjsonlogger.jsonlogger.JsonFormatter",
+                "()": "pythonjsonlogger.json.JsonFormatter",
                 "format": "%(asctime)s %(name)s %(levelname)s %(module)s %(lineno)d %(message)s",
             },
         },

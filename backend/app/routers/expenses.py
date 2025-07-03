@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Annotated, List, Optional
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
@@ -8,14 +8,9 @@ from sqlalchemy.orm import Session
 from backend.app.auth.dependencies import CurrentActiveUser
 from backend.app.db.database import get_db
 from backend.app.models.expenses import Category, Expense, User
-from backend.app.schemas.expenses import (
-    CategoryStats,
-    CurrencyStats,
-    ExpenseCreate,
-    ExpenseResponse,
-    ExpenseStatistics,
-    ExpenseUpdate,
-)
+from backend.app.schemas.expenses import (CategoryStats, CurrencyStats,
+                                          ExpenseCreate, ExpenseResponse,
+                                          ExpenseStatistics, ExpenseUpdate)
 
 router = APIRouter()
 
@@ -219,7 +214,7 @@ def create_expense(
         currency=expense.currency,
         category_id=expense.category_id,
         owner_id=current_user.id,
-        date=datetime.utcnow(),
+        date=datetime.now(timezone.utc),
     )
 
     db.add(new_expense)

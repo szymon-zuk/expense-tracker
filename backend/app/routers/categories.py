@@ -7,12 +7,8 @@ from sqlalchemy.orm import Session
 from backend.app.auth.dependencies import CurrentActiveUser
 from backend.app.db.database import get_db
 from backend.app.models.expenses import Category, Expense
-from backend.app.schemas.categories import (
-    CategoryCreate,
-    CategoryResponse,
-    CategoryUpdate,
-    CategoryWithStats,
-)
+from backend.app.schemas.categories import (CategoryCreate, CategoryResponse,
+                                            CategoryUpdate, CategoryWithStats)
 
 router = APIRouter(prefix="/categories", tags=["categories"])
 

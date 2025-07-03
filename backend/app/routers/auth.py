@@ -1,28 +1,20 @@
 from datetime import datetime, timezone
 from typing import Annotated
 
-from fastapi import APIRouter, Depends, HTTPException, Request, Response, status
+from fastapi import (APIRouter, Depends, HTTPException, Request, Response,
+                     status)
 from fastapi.responses import RedirectResponse
 from sqlalchemy.orm import Session
 
 from backend.app.auth.dependencies import CurrentUser
-from backend.app.auth.jwt import (
-    create_token_pair,
-    hash_password,
-    verify_password,
-    verify_token,
-)
+from backend.app.auth.jwt import (create_token_pair, hash_password,
+                                  verify_password, verify_token)
 from backend.app.auth.oauth import get_google_auth_url, get_google_user_info
 from backend.app.config.logging import get_logger
 from backend.app.db.database import get_db
 from backend.app.models.expenses import User
-from backend.app.schemas.auth import (
-    LoginRequest,
-    RefreshTokenRequest,
-    Token,
-    UserCreate,
-    UserResponse,
-)
+from backend.app.schemas.auth import (LoginRequest, RefreshTokenRequest, Token,
+                                      UserCreate, UserResponse)
 
 router = APIRouter(prefix="/auth", tags=["authentication"])
 logger = get_logger("auth.router")
